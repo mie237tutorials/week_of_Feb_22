@@ -1,0 +1,93 @@
+---
+title: "MIE237 Tutorial"
+author: "Neil Montgomery"
+date: "Week of February 22, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+show_full <- TRUE
+```
+
+In this tutorial we'll practice fitting components of R regression output together, and also practice interpreting residual plots.
+
+First I'll simulate a dataset with an input variable named $x$ and an output variable named $y$. Here is a summary (sample means and sample variances) and a plot of the data, followed by some R regression output with some entries obscured.
+
+```{r, message=FALSE, fig.width=3, fig.height=3, fig.align='center'}
+library(dplyr)
+library(ggplot2)
+library(knitr)
+set.seed(1)
+n <- 80
+x <- runif(n, 5, 10)
+y <- 6 - 0.03*x + rweibull(n, 1.5, 0.3)
+tut_data <- data_frame(y=y, x=x)
+tut_data %>% 
+  ggplot(aes(x=x, y=y)) + geom_point()
+```
+
+|   $\overline{y}$|   $\overline{x}$ | $s^2_y$ | $s^2_x$ |
+|--------:|--------:|---------:|--------:|
+| 6.042789| 7.628518| 0.0280896| 1.814987|
+
+```
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  6.34672    0.10335  61.409  < 2e-16 ***
+x           -0.03984    *******  ******  ******* ** 
+---
+
+Residual standard error: 0.1598 on 78 degrees of freedom
+
+Analysis of Variance Table
+
+Response: y
+          Df Sum Sq  Mean Sq F value   Pr(>F)   
+x         ** ****** ********  (OMIT)   (OMIT)
+Residuals ** ****** ********    
+```
+
+Tutorial tasks: fill in all the blanks `*******` (not the ones that say `(OMIT)` because that hasn't been covered.) 
+
+Here are the residual plots. Comment on them, and on any possible issues with the model assumptions/calculations.
+
+```{r, fig.height=4}
+yx_fit <- lm(y~x)
+yx_fit %>% 
+  ggplot(aes(sample = .stdresid)) + stat_qq() + geom_abline()
+yx_fit %>% 
+  ggplot(aes(x=.fitted, y=.resid)) + geom_point()
+```
+
+\pagebreak
+
+Now I'll simulate some other regression datasets for the purpose of practicing the interpretation of the residual vs. fitted values plot. Each of the following pairs of plots has the original data plotted on the left and the plot of residuals vs. fitted values on the right. Match up the following 4 plots to the these correct interpretations:
+
+1. No clear non-linear pattern and no violation of the equal variance assumption.
+2. A clear non-linear pattern but no violation of the equal variance assumption.
+3. No clear non-linear pattern but a violation of the equal variance assumption.
+4. A clear non-linear pattern and a violation of the equal variance assumption.
+
+```{r, fig.height=3, fig.width=3}
+set.seed(4)
+x <- sort(x)
+
+y1 <- 1 + x + rnorm(n, 0, seq(1,5,length.out = n)/10)
+qplot(x, y=y1) + labs(y="y")
+lm(y1 ~ x) %>% ggplot(aes(x=.fitted, y=.resid)) + geom_point()
+
+y3 <- 2 - x + pmin(rexp(n), 4)
+qplot(x, y=y3) + labs(y="y")
+lm(y3 ~ x) %>% ggplot(aes(x=.fitted, y=.resid)) + geom_point()
+
+y4 <- ((x - 7.5)/12)^3 + rweibull(n, 1.2, seq(1, 5, length.out=n)/1000)
+qplot(x, y4) + labs(y="y")
+lm(y4 ~ x) %>% ggplot(aes(x=.fitted, y=.resid)) + geom_point()
+
+
+y2 <- 1 + ((x-mean(x-1))/1.5)^2 + rnorm(n, 0, 1)
+qplot(x, y2) + labs(y="y")
+lm(y2 ~ x) %>% ggplot(aes(x=.fitted, y=.resid)) + geom_point()
+
+```
